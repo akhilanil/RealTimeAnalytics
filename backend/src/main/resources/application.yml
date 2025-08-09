@@ -16,3 +16,15 @@ dashboard:
       active-users: 5
       page-views: 15
       user-sessions: 5
+
+management:
+  server:
+    port: 8080       # same port as app; change if you want a separate port
+  endpoints:
+    web:
+      exposure:
+        include: health, info   # expose health and info endpoints
+      base-path: /actuator      # default path
+  endpoint:
+    health:
+      show-details: always      # show component details like Redis status
