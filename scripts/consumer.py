@@ -1,9 +1,10 @@
 import time
-from constants import TOPIC_NAME_USER_EVENTS, CONSUMER_GROUP_ID, KAFKA_BOOTSTRAP_SERVERS, UserEvent
+from constants import TOPIC_NAME_USER_EVENTS, CONSUMER_GROUP_ID_PROCESSOR, KAFKA_BOOTSTRAP_SERVERS, UserEvent
 from utils import validate_events, get_kafka_consumer, get_redis_client
 import os
 from redis import Redis
 from datetime import datetime
+from pymongo import MongoClient, ASCENDING
 
 
 
@@ -34,10 +35,11 @@ if __name__ == '__main__':
     time.sleep(10)
 
     kafka_bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVERS', KAFKA_BOOTSTRAP_SERVERS)
+    consumer_group_id = os.getenv('CONSUMER_GROUP_ID', CONSUMER_GROUP_ID_PROCESSOR)
 
 
-    print(f"Connecting to kafka server: {kafka_bootstrap_server} to topic {TOPIC_NAME_USER_EVENTS} consumer group: {CONSUMER_GROUP_ID}", )
-    consumer = get_kafka_consumer(kafka_bootstrap_server, TOPIC_NAME_USER_EVENTS, CONSUMER_GROUP_ID)
+    print(f"Connecting to kafka server: {kafka_bootstrap_server} to topic {TOPIC_NAME_USER_EVENTS} consumer group: {consumer_group_id}", )
+    consumer = get_kafka_consumer(kafka_bootstrap_server, TOPIC_NAME_USER_EVENTS, consumer_group_id)
 
     print(f"Initilising redis", )
     redis_client: Redis = get_redis_client(
@@ -59,8 +61,8 @@ if __name__ == '__main__':
                     insert_to_redis(redis_client=redis_client, user_event=user_event)
                     print(record.value)
                 except ValueError:
+                    # Just log these.
                     print("Invalid event: ", record.value)
-                    # Send this to another topic to write it to db
                 
 
         # Sleep for 10 seconds before next poll

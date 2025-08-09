@@ -21,7 +21,8 @@ PAGE_URLS = {
     "remove_cart": "/cart/remove"
 }
 
-CONSUMER_GROUP_ID = 'event-processor'
+CONSUMER_GROUP_ID_PROCESSOR = 'event-processor'
+CONSUMER_GROUP_ID_AUDIT = 'audit'
 
 class UserEvent(TypedDict):
     timestamp: str

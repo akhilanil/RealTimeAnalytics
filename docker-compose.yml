@@ -51,6 +51,27 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - CONSUMER_GROUP_ID=event-processor
+      - PYTHONUNBUFFERED=1
+    restart: on-failure
+  audit:
+    container_name: audit-serverless
+    build:
+      context: ./scripts
+      dockerfile: AuditDockerFile
+    depends_on:
+      - kafka
+      - cache
+      - mongo
+    environment:
+      - REDIS_HOST=cache
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - CONSUMER_GROUP_ID=audit
+      - MONGODB_URI=mongodb://root:rootpass@mongo:27017/?authSource=admin
+      - MONGO_DB=analytics
+      - MONGO_COLLECTION=events
       - PYTHONUNBUFFERED=1
     restart: on-failure
   api:
@@ -81,7 +102,40 @@ services:
     ports:
       - "5173:5173"
     restart: unless-stopped
-
+  mongo:
+    image: mongo:7
+    container_name: mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"          # optional: expose to host
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpass
+      MONGO_INITDB_DATABASE: analytics
+    volumes:
+      - mongo_data:/data/db
+      # Optional: create an app user on first boot
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mongosh", "--username", "root", "--password", "rootpass", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: mongo-express
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: rootpass
+      ME_CONFIG_MONGODB_URL: mongodb://root:rootpass@mongo:27017/
+      ME_CONFIG_BASICAUTH: "false"
 volumes:
   cache:
+    driver: local
+  mongo_data:
     driver: local
