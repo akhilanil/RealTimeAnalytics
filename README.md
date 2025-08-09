@@ -1,4 +1,4 @@
-# Real-Time Event Processing with Kafka, Redis, and MongoDB
+# Real-Time Event Processing with Analytics Dashboard
 
 This project is a **local simulation** of a real-time analytics pipeline that:
 
@@ -33,6 +33,8 @@ This project is a **local simulation** of a real-time analytics pipeline that:
   - A simple Frontend app which connects to backend APIs to dispaly the metrics
   - Refreshes every 30 seconds
   - Uses React + schadcn components
+
+![Sequence Diagram](./images/SequenceDiagram.png)
 
 ---
 
@@ -159,7 +161,8 @@ pip install -r requirements.txt
 python scripts/producer.py
 ```
 
-###  View Dashboard
+### View Dashboard
+
 Open http://localhost:5173/dashboard in browser for viewing dashboard
 
 ---
@@ -210,9 +213,12 @@ Open http://localhost:5173/dashboard in browser for viewing dashboard
     - For a given user_id, union last 5 minute buckets to get session count.
 
 ---
+
 ## 🗄 MongoDB Audit Collection
+
 - Collection: `events`
 - Example Document:
+
 ```json
 {
     _id: ObjectId('68979be4651aaf51086dd15f'),
@@ -231,18 +237,21 @@ Open http://localhost:5173/dashboard in browser for viewing dashboard
     reason: 'Missing fields: [\'event_type\']'
 }
 ```
+
 ---
+
 ## 📡 API Design
+
 The system exposes a minimal REST API for the dashboard to retrieve real-time metrics from Redis.
 All endpoints are under the base path: `/api/v1/dashboard`
 
 - **Get Active Users**
-    - Endpoint: `GET /api/v1/dashboard/active-users`
-    - Description: Returns the list of active users in the last 5 minutes.
-    - Query Params: None
-    - Error Handling:
-        - On internal error: returns 500 Internal Server Error with an empty list.
-    - Response (200 OK):
+  - Endpoint: `GET /api/v1/dashboard/active-users`
+  - Description: Returns the list of active users in the last 5 minutes.
+  - Query Params: None
+  - Error Handling:
+    - On internal error: returns 500 Internal Server Error with an empty list.
+  - Response (200 OK):
 
 ```json
 {
@@ -258,7 +267,6 @@ All endpoints are under the base path: `/api/v1/dashboard`
   ]
 }
 ```
-    
 
 - **Get Top Viewed Pages**
   - Endpoint: GET /api/v1/dashboard/page-views
@@ -285,11 +293,13 @@ All endpoints are under the base path: `/api/v1/dashboard`
 ```
 
 Notes:
+
 - Responses are built from Redis-stored rolling metrics, so results are up-to-date within a few seconds of event ingestion.
 - All timestamps used in metric calculations are in UTC to avoid timezone-related inconsistencies.
 - Security considerations are documented separately for production environments.
 
 ---
+
 ## 🚦 Error Handling
 
 - #### Validation Failures:
