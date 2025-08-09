@@ -1,5 +1,6 @@
 package com.liftlab.controller;
 
+import com.google.common.collect.ImmutableList;
 import com.liftlab.models.UserDetailsResponse;
 import com.liftlab.models.PageViewsResponse;
 import com.liftlab.service.DashboardService;
