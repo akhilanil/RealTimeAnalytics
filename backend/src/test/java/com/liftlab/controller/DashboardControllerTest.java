@@ -1,83 +1,124 @@
 package com.liftlab.controller;
 
 import com.google.common.collect.ImmutableList;
-import com.liftlab.models.UserDetailsResponse;
 import com.liftlab.models.PageViewsResponse;
+import com.liftlab.models.UserDetailsResponse;
 import com.liftlab.service.DashboardService;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
-public class DashboardControllerTest {
+/**
+ * Tests for {@link DashboardController}.
+ */
+@WebMvcTest(controllers = DashboardController.class)
+class DashboardControllerTest {
 
-    @Mock
-    private DashboardService dashboardService;
-
-    @InjectMocks
-    private DashboardController dashboardController;
-
+    @Autowired
     private MockMvc mockMvc;
 
-    @BeforeEach
-    public void setUp() {
-        MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(dashboardController).build();
+    @MockitoBean
+    private DashboardService dashboardService;
+
+    @Nested
+    @DisplayName("GET /api/v1/dashboard/active-users")
+    class ActiveUsers {
+
+        @Test
+        @DisplayName("returns 200 with body from service")
+        void activeUsers_ok() throws Exception {
+            // given
+            UserDetailsResponse body = UserDetailsResponse.builder()
+                    .withUserDetails(ImmutableList.of()) // keep simple; we just assert field presence
+                    .build();
+            when(dashboardService.getUserDetails()).thenReturn(body);
+
+            // when/then
+            mockMvc.perform(get("/api/v1/dashboard/active-users"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.userDetails", isA(Iterable.class)));
+        }
+
+        @Test
+        @DisplayName("returns 500 with empty list on exception")
+        void activeUsers_error() throws Exception {
+            // given
+            when(dashboardService.getUserDetails()).thenThrow(new RuntimeException("boom"));
+
+            // when/then
+            mockMvc.perform(get("/api/v1/dashboard/active-users"))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.userDetails", hasSize(0)));
+        }
     }
 
-    @Test
-    public void testGetActiveUsers_InternalServerError() throws Exception {
-        when(dashboardService.getUserDetails()).thenThrow(new RuntimeException("Service error"));
+    @Nested
+    @DisplayName("GET /api/v1/dashboard/page-views")
+    class PageViews {
 
-        mockMvc.perform(get("/api/v1/dashboard/active-users")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isInternalServerError())
-                .andExpect(content().json("{\"userDetails\":[]}"));
-    }
+        @Test
+        @DisplayName("uses default offset=5 and returns 200")
+        void pageViews_defaultOffset_ok() throws Exception {
+            // given
+            PageViewsResponse body = PageViewsResponse.builder()
+                    .withPageViews(ImmutableList.of())
+                    .build();
+            when(dashboardService.getTopPages(eq(5))).thenReturn(body);
 
-    @Test
-    public void testGetPageViews_InternalServerError() throws Exception {
-        when(dashboardService.getTopPages(5)).thenThrow(new RuntimeException("Service error"));
+            // when/then
+            mockMvc.perform(get("/api/v1/dashboard/page-views"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.pageViews", isA(Iterable.class)));
 
-        mockMvc.perform(get("/api/v1/dashboard/page-views")
-                .param("offset", "5")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isInternalServerError())
-                .andExpect(content().json("{\"pageViews\":[]}"));
-    }
+            // also verify the default offset was used
+            Mockito.verify(dashboardService).getTopPages(5);
+        }
 
-    @Test
-    public void testGetActiveUsers() throws Exception {
-        UserDetailsResponse userDetailsResponse = UserDetailsResponse.builder().withUserDetails(ImmutableList.of()).build();
-        when(dashboardService.getUserDetails()).thenReturn(userDetailsResponse);
+        @Test
+        @DisplayName("passes provided offset to service and returns 200")
+        void pageViews_customOffset_ok() throws Exception {
+            // given
+            int offset = 10;
+            PageViewsResponse body = PageViewsResponse.builder()
+                    .withPageViews(ImmutableList.of())
+                    .build();
+            when(dashboardService.getTopPages(eq(offset))).thenReturn(body);
 
-        mockMvc.perform(get("/api/v1/dashboard/active-users")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().json("{}"));
-    }
+            // when/then
+            mockMvc.perform(get("/api/v1/dashboard/page-views").param("offset", String.valueOf(offset)))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.pageViews", isA(Iterable.class)));
 
-    @Test
-    public void testGetPageViews() throws Exception {
-        PageViewsResponse pageViewsResponse = PageViewsResponse.builder().withPageViews(ImmutableList.of()).build();
-        when(dashboardService.getTopPages(5)).thenReturn(pageViewsResponse);
+            Mockito.verify(dashboardService).getTopPages(offset);
+        }
 
-        mockMvc.perform(get("/api/v1/dashboard/page-views")
-                .param("offset", "5")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().json("{}"));
+        @Test
+        @DisplayName("returns 500 with empty list on exception")
+        void pageViews_error() throws Exception {
+            // given
+            when(dashboardService.getTopPages(Mockito.anyInt())).thenThrow(new RuntimeException("boom"));
+
+            // when/then
+            mockMvc.perform(get("/api/v1/dashboard/page-views").param("offset", "7"))
+                    .andExpect(status().isInternalServerError())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.pageViews", hasSize(0)));
+        }
     }
 }
