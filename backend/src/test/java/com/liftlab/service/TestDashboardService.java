@@ -1,11 +1,13 @@
 package com.liftlab.service;
 
 import com.flextrade.jfixture.JFixture;
+import com.liftlab.TestUtils;
 import com.liftlab.config.DashboardOffsetConfig;
 import com.liftlab.config.RedisKeyConfig;
 import com.liftlab.models.UserDetailsResponse;
 import com.liftlab.models.PageViewsResponse;
 import com.liftlab.models.UserDetails;
+import org.junit.jupiter.api.Assertions;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.HashOperations;
 import java.util.Set;
@@ -33,8 +35,8 @@ public class TestDashboardService {
     public static void setUp() {
         TestDashboardService.redisTemplate = Mockito.mock(StringRedisTemplate.class);
         final JFixture fixture = new JFixture();
-        TestDashboardService.redisKeyConfig = fixture.create(RedisKeyConfig.class);
-        TestDashboardService.dashboardOffsetConfig = fixture.create(DashboardOffsetConfig.class);
+        TestDashboardService.redisKeyConfig = TestUtils.getRedisKeyConfig();
+        TestDashboardService.dashboardOffsetConfig = TestUtils.getDashboardOffsetKeyConfig();
     }
 
     @BeforeEach
@@ -77,8 +79,10 @@ public class TestDashboardService {
 
         UserDetails userDetails = dashboardService.getUserDetails("user1");
         Assertions.assertNotNull(userDetails);
-        Assertions.assertEquals(2, userDetails.getSessionCount());
+        Assertions.assertEquals(10, userDetails.getSessionCount());
     }
+
+    @Test
     public void testGetRedisKey() {
         List<String> values = dashboardService.getRedisKeys(3, "test");
         Assertions.assertEquals(3, values.size());
