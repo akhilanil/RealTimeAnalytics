@@ -221,20 +221,20 @@ Open http://localhost:5173/dashboard in browser for viewing dashboard
 
 ```json
 {
-    _id: ObjectId('68979be4651aaf51086dd15f'),
-    doc_type: 'success',
-    timestamp: '2025-08-09T19:04:31.239503+00:00',
-    user_id: 'usr_6',
-    event_type: 'page_view',
-    page_url: '/products/electronics',
-    session_id: 'sess_71'
+    "_id": "68979be4651aaf51086dd15f",
+    "doc_type": "success",
+    "timestamp": "2025-08-09T19:04:31.239503+00:00",
+    "user_id": "usr_6",
+    "event_type": "page_view",
+    "page_url": "/products/electronics",
+    "session_id": "sess_71"
 }
 {
-    _id: ObjectId('6897b74f651aaf51086dd173'),
-    doc_type: 'failed',
-    timestamp: '2025-08-09T21:02:07Z',
-    failed_event: '{"timestamp": "2025-08-09T21:01:36.474580+00:00", "user_id": "usr_2", "page_url": "/products/add", "session_id": "sess_54"}',
-    reason: 'Missing fields: [\'event_type\']'
+    "_id": "6897b74f651aaf51086dd173",
+    "doc_type": "failed",
+    "timestamp": "2025-08-09T21:02:07Z",
+    "failed_event": "{\"timestamp\": \"2025-08-09T21:01:36.474580+00:00\", \"user_id\": \"usr_2\", \"page_url\": \"/products/add\", \"session_id\": \"sess_54\"}",
+    "reason": "Missing fields: [\\'event_type\\']"
 }
 ```
 
