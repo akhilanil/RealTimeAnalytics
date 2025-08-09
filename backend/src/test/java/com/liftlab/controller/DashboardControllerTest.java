@@ -38,6 +38,27 @@ public class DashboardControllerTest {
     }
 
     @Test
+    public void testGetActiveUsers_InternalServerError() throws Exception {
+        when(dashboardService.getUserDetails()).thenThrow(new RuntimeException("Service error"));
+
+        mockMvc.perform(get("/api/v1/dashboard/active-users")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().json("{\"userDetails\":[]}"));
+    }
+
+    @Test
+    public void testGetPageViews_InternalServerError() throws Exception {
+        when(dashboardService.getTopPages(5)).thenThrow(new RuntimeException("Service error"));
+
+        mockMvc.perform(get("/api/v1/dashboard/page-views")
+                .param("offset", "5")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().json("{\"pageViews\":[]}"));
+    }
+
+    @Test
     public void testGetActiveUsers() throws Exception {
         UserDetailsResponse userDetailsResponse = UserDetailsResponse.builder().withUserDetails(ImmutableList.of()).build();
         when(dashboardService.getUserDetails()).thenReturn(userDetailsResponse);
