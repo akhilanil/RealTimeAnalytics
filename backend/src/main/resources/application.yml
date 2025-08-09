@@ -1,0 +1,18 @@
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+
+dashboard:
+  redis:
+    keys:
+      active-users: 'active_users'
+      page-views: 'page_views'
+      user-sessions: 'user_sessions'
+  config:
+    offset:
+      active-users: 5
+      page-views: 15
+      user-sessions: 5
