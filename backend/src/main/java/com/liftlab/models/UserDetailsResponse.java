@@ -9,7 +9,7 @@ import java.util.List;
 @Getter
 @Builder(setterPrefix = "with")
 @ToString
-public class ActiveUsersResponse {
+public class UserDetailsResponse {
 
     private List<UserDetails> userDetails;
 

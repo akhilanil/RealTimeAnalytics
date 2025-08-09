@@ -1,6 +1,6 @@
 package com.liftlab.controller;
 
-import com.liftlab.models.ActiveUsersResponse;
+import com.liftlab.models.UserDetailsResponse;
 import com.liftlab.models.PageViewsResponse;
 import com.liftlab.service.DashboardService;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +21,9 @@ public class DashboardController {
     }
 
     @GetMapping("/active-users")
-    public ResponseEntity<ActiveUsersResponse> getActiveUsers() {
-        final ActiveUsersResponse activeUsersResponse = this.dashboardService.getActiveUsers();
-        return ResponseEntity.ok(activeUsersResponse);
+    public ResponseEntity<UserDetailsResponse> getActiveUsers() {
+        final UserDetailsResponse userDetailsResponse = this.dashboardService.getUserDetails();
+        return ResponseEntity.ok(userDetailsResponse);
     }
 
     @GetMapping("/page-views")

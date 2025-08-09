@@ -80,6 +80,14 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/com.flextrade.jfixture/jfixture -->
+        <dependency>
+            <groupId>com.flextrade.jfixture</groupId>
+            <artifactId>jfixture</artifactId>
+            <version>2.7.2</version>
+            <scope>test</scope>
+        </dependency>
+
 
     </dependencies>
 
