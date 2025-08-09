@@ -4,8 +4,10 @@ from kafka.errors import TopicAlreadyExistsError
 import json
 from constants import UserEvent
 from kafka import KafkaConsumer
-import os
 import redis
+from pymongo import MongoClient, ASCENDING
+from pydantic import ValidationError
+
 
 
 
@@ -43,15 +45,22 @@ def create_topic_if_not_exists(kafka_boot_strap_server: str, topic_name: str):
 
 
 def validate_events(event_str: str) -> UserEvent:
-    user_event_dict = json.loads(event_str)
-    
-    # Validate that all fields in UserEvent are present
-    missing_fields = [field for field in UserEvent.__annotations__ if field not in user_event_dict]
-    if missing_fields:
-        raise ValueError(f"Missing fields in event data: {missing_fields}")
-    
-    return UserEvent(**user_event_dict)
+    try:
+        user_event_dict = json.loads(event_str)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON: {e}")
 
+    missing_fields = [f for f in UserEvent.__annotations__ if f not in user_event_dict]
+    if missing_fields:
+        raise ValueError(f"Missing fields: {missing_fields}")
+
+    for field, expected_type in UserEvent.__annotations__.items():
+        if not isinstance(user_event_dict[field], expected_type):
+            raise ValueError(f"Field '{field}' should be {expected_type.__name__}")
+
+    return user_event_dict 
+    
+    
 def get_redis_client(redis_host: str, redis_port: int, redis_pwd: str) -> redis.Redis:
     return redis.Redis(
         host=redis_host,
@@ -59,3 +68,6 @@ def get_redis_client(redis_host: str, redis_port: int, redis_pwd: str) -> redis.
         password=redis_pwd,
         decode_responses=True  
     )
+
+def get_mongo_client(mongo_uri: str) -> MongoClient:
+    return MongoClient(mongo_uri)
