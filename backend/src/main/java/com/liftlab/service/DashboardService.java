@@ -58,19 +58,18 @@ public class DashboardService {
 
         log.info("Fetching values for keys: {} to fetch users.", activeUsersKeys);
 
-        final Set<String> users = activeUsersKeys.stream()
-                .map(redisKeys -> this.redisTemplate.opsForSet().members(redisKeys))
-                .filter(Objects::nonNull)
-                .flatMap(Set::stream)
-                .collect(ImmutableSet.toImmutableSet());
-
-
-        final List<UserDetails> userDetails = users
-                .stream()
-                .map(this::getUserDetails)
-                .collect(ImmutableList.toImmutableList());
-
-        log.info("Active users: {}", userDetails);
+        final Set<String> users = this.redisTemplate.opsForSet().union(activeUsersKeys);
+        final List<UserDetails> userDetails;
+        if (Objects.nonNull(users)) {
+            userDetails = users
+                    .stream()
+                    .map(this::getUserDetails)
+                    .collect(ImmutableList.toImmutableList());
+            log.info("Active users: {}", userDetails);
+        } else {
+            userDetails = ImmutableList.of();
+            log.info("No active users found");
+        }
 
         return UserDetailsResponse.builder()
                 .withUserDetails(userDetails)
@@ -152,11 +151,11 @@ public class DashboardService {
         final List<String> redisUserSessionKey = this.getRedisKeys(this.dashboardOffsetConfig.getUserSessionsOffset(),
                 String.format("%s:%s", this.redisKeyConfig.getUserSessionsKey(), userId));
 
-        final int totalSessions = redisUserSessionKey.stream()
-                .map(redisKeys -> this.redisTemplate.opsForSet().members(redisKeys))
-                .filter(Objects::nonNull)
-                .mapToInt(Set::size)
-                .sum();
+        final Set<String> allSessions = this.redisTemplate.opsForSet().union(redisUserSessionKey);
+        int totalSessions = 0;
+        if(Objects.nonNull(allSessions)) {
+            totalSessions = allSessions.size();
+        }
         return UserDetails.builder()
                 .withUserId(userId)
                 .withSessionCount(totalSessions)

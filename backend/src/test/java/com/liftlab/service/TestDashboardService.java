@@ -53,7 +53,7 @@ public class TestDashboardService {
     public void testGetUserDetails() {
         SetOperations<String, String> setOps = Mockito.mock(SetOperations.class);
         Mockito.when(redisTemplate.opsForSet()).thenReturn(setOps);
-        Mockito.when(setOps.members(Mockito.anyString())).thenReturn(Set.of("user1", "user2"));
+        Mockito.when(setOps.union(Mockito.anyCollection())).thenReturn(Set.of("user1", "user2"));
 
         UserDetailsResponse response = dashboardService.getUserDetails();
         Assertions.assertNotNull(response);
@@ -75,11 +75,11 @@ public class TestDashboardService {
     public void testGetUserDetailsById() {
         SetOperations<String, String> setOps = Mockito.mock(SetOperations.class);
         Mockito.when(redisTemplate.opsForSet()).thenReturn(setOps);
-        Mockito.when(setOps.members(Mockito.anyString())).thenReturn(Set.of("session1", "session2"));
+        Mockito.when(setOps.union(Mockito.anyCollection())).thenReturn(Set.of("session1", "session2"));
 
         UserDetails userDetails = dashboardService.getUserDetails("user1");
         Assertions.assertNotNull(userDetails);
-        Assertions.assertEquals(10, userDetails.getSessionCount());
+        Assertions.assertEquals(2, userDetails.getSessionCount());
     }
 
     @Test
