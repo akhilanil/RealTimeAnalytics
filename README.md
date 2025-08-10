@@ -188,16 +188,21 @@ Open http://localhost:5173/dashboard in browser for viewing dashboard
   - **Definition**: Number of page_view events per page_url in the last 900 seconds.
   - **Redis Structure:**
     - Key: page_views:{minute_bucket}
-    - Type: HASH
-    - Field: page_url
-    - Value: Integer count
+    - Type: ZSET
+    - Member: page_url
+    - Score: running count (float; treated as integer)
     - TTL: 900 seconds
   - **Update:**
-    - On each page_view event, HINCRBY page_views:{minute_bucket} page_url 1
-    - Set key expiry to 900 seconds
+    - On each page_view event:
+      - ZINCRBY page_views:{minute_bucket} 1 <page_url>
+      - EXPIRE page_views:{minute_bucket} 900
   - **Read:**
-    - Aggregate counts across last 15 minute buckets
-    - Sort descending to get Top 5 pages.
+    - Build keys for the last 15 minute buckets (UTC).
+    - Server-side union with SUM into a short-lived temp ZSET:
+      - `ZUNIONSTORE tmp:page_views:rolling:<ts>:<uuid> N <k1> <k2> ... <kN> AGGREGATE SUM`
+      - `EXPIRE tmp:page_views:rolling:<ts>:<uuid> 10`
+    - Fetch Top-K
+      - `ZREVRANGE tmp:page_views:rolling:<ts>:<uuid> 0 <K-1> WITHSCORES` (done in Spring)
 
 - **Active Sessions per User** (last 5 minutes)
   - **Definition:** Unique session_ids for each user_id in the last 300 seconds.
