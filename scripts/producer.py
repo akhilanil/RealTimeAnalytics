@@ -13,7 +13,7 @@ def generate_event() -> UserEvent:
     event_type = 'page_view'
     event: UserEvent = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "user_id": f"usr_{random.randint(0, 10)}",
+        "user_id": f"usr_{random.randint(0, 30)}",
         "event_type": event_type,
         "page_url": random.choice(PAGE_URLS),
         "session_id": f"sess_{random.randint(50, 100)}"
@@ -32,7 +32,7 @@ def main():
     time.sleep(20)
 
     kafka_bootstrap_server = os.getenv('KAFKA_BOOTSTRAP_SERVERS', KAFKA_BOOTSTRAP_SERVERS)
-    wait_for_next_batch = os.getenv('WAIT_SECONDS_AFTER_BATCH', 5)
+    wait_for_next_batch = int(os.getenv('WAIT_SECONDS_AFTER_BATCH', 5))
 
     create_topic_if_not_exists(kafka_bootstrap_server, TOPIC_NAME_USER_EVENTS)
     print(f"Connecting to kafka server: {kafka_bootstrap_server} to topic {TOPIC_NAME_USER_EVENTS} to push events", )

@@ -19,8 +19,9 @@ This project is a **local simulation** of a real-time analytics pipeline that:
   - Reads events from Kafka
   - Validates events - Invalid events are logged and dropped.
   - Updates Redis with rolling metrics (TTL-based keys)
-  - Runs every ~10 seconds for near real-time dashboard updates
+  - Runs every ~5 seconds for near real-time dashboard updates
   - More details are given below (Metrics & Calculation Logic)
+  - Rate limited to fetch 100 records per second.
 - **Consumer B (Audit Sink)**:
   - Reads events from Kafka
   - Validates events
@@ -147,7 +148,7 @@ This spins up
 - kafka
 - Redis
 - MongoDB
-- Two containers depcting serverless scripts
+- Two containers depcting serverless scripts (consumer and audit)
 - Backend Spring boot api
 - Frontend react web application
 - Event producer
@@ -167,6 +168,7 @@ This spins up
   - After all events in the batch are sent, the producer flushes its buffer.
   - The script then waits for K seconds before starting the next batch.
   - K is configurable via an environment variable `WAIT_SECONDS_AFTER_BATCH`. You can configure in `docker-compose.yaml`
+- An initial delay of 20 seconds is set.
 
 
 ### View Dashboard
