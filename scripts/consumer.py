@@ -21,7 +21,7 @@ def insert_to_redis(redis_client: Redis, user_event:UserEvent):
     redis_client.expire(f"active_users:{minute_bucket}", 300)
 
     # Page Views by URL
-    redis_client.hincrby(f"page_views:{minute_bucket}", page_url, 1)
+    redis_client.zincrby(f"page_views:{minute_bucket}", 1.0, page_url)
     redis_client.expire(f"page_views:{minute_bucket}", 900)
 
     # Active Sessions per User

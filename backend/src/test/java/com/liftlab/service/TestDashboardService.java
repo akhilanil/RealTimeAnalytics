@@ -1,6 +1,7 @@
 package com.liftlab.service;
 
 import com.flextrade.jfixture.JFixture;
+import com.google.common.collect.ImmutableSet;
 import com.liftlab.TestUtils;
 import com.liftlab.config.DashboardOffsetConfig;
 import com.liftlab.config.RedisKeyConfig;
@@ -8,8 +9,11 @@ import com.liftlab.models.UserDetailsResponse;
 import com.liftlab.models.PageViewsResponse;
 import com.liftlab.models.UserDetails;
 import org.junit.jupiter.api.Assertions;
+import org.mockito.Mock;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.HashOperations;
+
+import java.time.Duration;
 import java.util.Set;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeAll;
@@ -17,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 
 import java.util.List;
 
@@ -62,13 +67,33 @@ public class TestDashboardService {
 
     @Test
     public void testGetTopPages() {
-        HashOperations<String, Object, Object> hashOps = Mockito.mock(HashOperations.class);
-        Mockito.when(redisTemplate.opsForHash()).thenReturn(hashOps);
-        Mockito.when(hashOps.entries(Mockito.anyString())).thenReturn(Map.of("page1", "5", "page2", "3"));
+        ZSetOperations<String, String> zestOps = Mockito.mock(ZSetOperations.class);
+        Mockito.when(redisTemplate.opsForZSet()).thenReturn(zestOps);
+        Mockito.doReturn(true).when(redisTemplate).delete(Mockito.anyString());
+
+        Mockito.doReturn(true).when(redisTemplate).expire(Mockito.anyString(), Mockito.any(Duration.class));
+
+
+
+        Mockito.when(zestOps.unionAndStore(Mockito.anyString(), Mockito.anyCollection(), Mockito.anyString()))
+                .thenReturn(10L);
+
+        ZSetOperations.TypedTuple<String> top1 = Mockito.mock(ZSetOperations.TypedTuple.class);
+        Mockito.when(top1.getValue()).thenReturn("/page1");
+        Mockito.when(top1.getScore()).thenReturn(5.0);
+        ZSetOperations.TypedTuple<String> top2 = Mockito.mock(ZSetOperations.TypedTuple.class);
+        Mockito.when(top1.getValue()).thenReturn("/page2");
+        Mockito.when(top1.getScore()).thenReturn(4.0);
+
+        final Set<ZSetOperations.TypedTuple<String>> top = ImmutableSet.of(top1, top2);
+
+        Mockito.when(zestOps.reverseRangeWithScores(Mockito.anyString(), Mockito.anyLong(), Mockito.anyLong()))
+                .thenReturn(top);
 
         PageViewsResponse response = dashboardService.getTopPages(2);
         Assertions.assertNotNull(response);
         Assertions.assertEquals(2, response.getPageViews().size());
+        
     }
 
     @Test

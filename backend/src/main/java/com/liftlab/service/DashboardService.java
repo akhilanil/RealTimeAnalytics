@@ -10,18 +10,23 @@ import com.liftlab.models.PageViewsResponse;
 import com.liftlab.models.UserDetails;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 /**
@@ -80,11 +85,14 @@ public class DashboardService {
     /**
      * Method to the get top pages accessed by all users
      * @param offset The number of results to be returned.
+     * @implNote : All the page views are stored in sorted set with count being the score. This method reads the ordered
+     * set unions it based on the score and store in another ordered set with a TTL of 10s. From this new set top N(offset)
+     * is picked.
      * @return The instance of PageViewsResponse
      */
     public PageViewsResponse getTopPages(final int offset) {
 
-        // First get the key for last five minutes
+        // First get the key
         final List<String> keys = this.getRedisKeys(
             this.dashboardOffsetConfig.getPageViewsOffset(),
             this.redisKeyConfig.getPageViewsKey()
@@ -92,28 +100,39 @@ public class DashboardService {
 
         log.info("Fetching values for keys: {} to fetch urls.", keys);
 
-        final Map<String, Integer> pageMap = new HashMap<>();
+        // Temporary key to store the union
+        final String destKey = "tmp:page_views:rolling:" +
+                ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) +
+                ":" + UUID.randomUUID();
 
-        keys.forEach(redisKey -> this.redisTemplate.opsForHash()
-                .entries(redisKey)
-                .forEach((key, value) -> {
-                    final String pageUrl = key.toString();
-                    final int count = Integer.parseInt(value.toString());
-                    // Add the url if absent
-                    if (pageMap.containsKey(pageUrl)) {
-                        pageMap.put(pageUrl, count + pageMap.get(pageUrl));
-                    } else {
-                        pageMap.put(pageUrl, count);
-                    }
+        // Now combine all sorted set into one.
+        final String first = keys.get(0);
+        final Collection<String> rest = keys.subList(1, keys.size());
+        Long unionCount = redisTemplate.opsForZSet().unionAndStore(first, rest, destKey);
 
-                })
-        );
+        if (unionCount == null || unionCount == 0L) {
+            redisTemplate.delete(destKey);
+            return PageViewsResponse.builder().withPageViews(ImmutableList.of()).build();
+        }
 
-        final List<PageViewCount> pageViews = pageMap.entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                .limit(offset)
-                .map(entry -> PageViewCount.builder().withPageUrl(entry.getKey()).withCount(entry.getValue()).build())
+        // Expiry as this is short-lived.
+        redisTemplate.expire(destKey, Duration.ofSeconds(10));
+
+        // Fetch the top elements
+        final Set<ZSetOperations.TypedTuple<String>> top =
+                redisTemplate.opsForZSet().reverseRangeWithScores(destKey, 0, Math.max(0, offset - 1));
+
+        if (top == null || top.isEmpty()) {
+            redisTemplate.delete(destKey);
+            return PageViewsResponse.builder().withPageViews(ImmutableList.of()).build();
+        }
+
+
+        final List<PageViewCount> pageViews = top.stream()
+                .map(t -> PageViewCount.builder()
+                        .withPageUrl(t.getValue())
+                        .withCount(t.getScore() == null ? 0 : t.getScore().intValue())
+                        .build())
                 .collect(ImmutableList.toImmutableList());
 
         log.info("Fetched top {} pages viewed: {}", offset, pageViews);
