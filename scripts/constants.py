@@ -5,21 +5,19 @@ from typing import TypedDict
 KAFKA_BOOTSTRAP_SERVERS = 'localhost:9094'
 TOPIC_NAME_USER_EVENTS = 'user-events'
 
-EVENT_TYPES = [
-    "page_view",
-    "payment_done",
-    "add_cart",
-    "order_return",
-    "remove_cart"
-]
 
-PAGE_URLS = {
-    "page_view": "/products/electronics",
-    "payment_done": "/checkout/success",
-    "add_cart": "/products/add",
-    "order_return": "/orders/return",
-    "remove_cart": "/cart/remove"
-}
+PAGE_URLS = [
+    "/products/electronics",
+    "/checkout/success",
+    "/products/add",
+    "/orders/return",
+    "/purchase/",
+    "/cart/add",
+    "/cart/remove",
+    "/product/remove",
+    "/products/gloves",
+    "/products/bottles"
+]
 
 CONSUMER_GROUP_ID_PROCESSOR = 'event-processor'
 CONSUMER_GROUP_ID_AUDIT = 'audit'

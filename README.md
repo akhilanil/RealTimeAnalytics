@@ -150,16 +150,24 @@ This spins up
 - Two containers depcting serverless scripts
 - Backend Spring boot api
 - Frontend react web application
+- Event producer
 
-### 3️⃣ Start the producer (simulated events)
+###  Event producer (simulated events)
+- This script produces events to Kafka in batches with controlled pacing and an adjustable pause between batches.
+- Initialize Producer
+  - Ensures the Kafka topic exists.
+  - Creates a single producer instance that is reused for all batches.
+- Batch Execution
+  - Each batch sends a random number of events per second between 20 and 100.
+  - The interval between events is calculated as: `interval = 1.0 / total_events_per_second`
+- Event Sending
+  - Sends total_events_per_second events for the current batch.
+  - Sleeps for interval seconds between each event to maintain rate.
+- Batch Pause
+  - After all events in the batch are sent, the producer flushes its buffer.
+  - The script then waits for K seconds before starting the next batch.
+  - K is configurable via an environment variable `WAIT_SECONDS_AFTER_BATCH`. You can configure in `docker-compose.yaml`
 
-```bash
-cd scripts
-python -m venv .venv
-source .venv/bin/active
-pip install -r requirements.txt
-python scripts/producer.py
-```
 
 ### View Dashboard
 
