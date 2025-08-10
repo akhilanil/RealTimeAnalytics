@@ -311,6 +311,24 @@ Notes:
 - Security considerations are documented separately for production environments.
 
 ---
+## 🧪 Testing
+**Unit tests (Spring Boot) — CI on pull requests**
+- What runs: `mvn -B -ntp test` for the API module on every pull request to main.
+- Where: GitHub Actions workflow at .github/workflows/pr-backend-tests.yml.
+- Why: Fast feedback on controllers/services, Redis accessors (mocked), and utility classes.
+- Future enhancement: Add testcases for serveless scripts also.
+
+**End-to-End (E2E) tests — design (not implemented yet)**
+- Goal: validate the entire pipeline from event ingestion to dashboard API.
+- Proposed tooling & steps:
+  - Environment: bring up full stack via `docker compose`
+  - Seed data: publish a controlled set of events to Kafka
+  - Wait & assert: within ~5–10s,
+    - Call `GET /api/v1/dashboard/page-views?offset=5`. Expect top URLs & counts that match the seeded data (UTC window).
+    - Call `GET /api/v1/dashboard/active-users`. Expect distinct users = N (from fixture) and session counts per user.
+  - Audit check: query Mongo events collection and verify total docs = valid + invalid, with status & error_reason fields present.
+
+---
 
 ## 🚦 Error Handling
 
