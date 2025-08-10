@@ -52,7 +52,8 @@ if __name__ == '__main__':
     while True:
         print("Polling for new message")
         # Poll messages for a short duration (non-blocking)
-        messages = consumer.poll(timeout_ms=1000, max_records=500)
+        # Reads only 100 messages per second
+        messages = consumer.poll(timeout_ms=1000, max_records=100)
 
         for tp, records in messages.items():
             for record in records:
@@ -66,5 +67,5 @@ if __name__ == '__main__':
                 
 
         # Sleep for 10 seconds before next poll
-        time.sleep(10)
+        time.sleep(5)
 

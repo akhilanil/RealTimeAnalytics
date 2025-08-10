@@ -54,6 +54,18 @@ services:
       - CONSUMER_GROUP_ID=event-processor
       - PYTHONUNBUFFERED=1
     restart: on-failure
+  producer:
+    container_name: external-producer
+    build:
+      context: ./scripts
+      dockerfile: ProducerDockerFile
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - WAIT_SECONDS_AFTER_BATCH=3
+      - PYTHONUNBUFFERED=1
+    restart: on-failure
   audit:
     container_name: audit-serverless
     build:
